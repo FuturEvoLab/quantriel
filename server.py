@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "1.5.4"
+VERSION = "1.5.5"
 HOST, PORT = "127.0.0.1", int(os.environ.get("PORT", "8767"))
 ROOT = os.path.dirname(os.path.abspath(__file__))
 STATIC = os.path.join(ROOT, "static")
@@ -1734,6 +1734,16 @@ def info_table(cik, f):
     idx = sec_get(base + "/index.json", ttl=86400)
     xmls = [i["name"] for i in idx.get("directory", {}).get("item", []) if i["name"].lower().endswith(".xml")]
     table = next((x for x in xmls if "primary_doc" not in x.lower()), None)
+    amend = ""
+    if f.get("form", "").endswith("/A"):  # 修正申报：封面里写明是整份重报（RESTATEMENT）还是补充新持仓（NEW HOLDINGS）
+        cover = next((x for x in xmls if "primary_doc" in x.lower()), None)
+        if cover:
+            amend = txt(strip_ns(parse_xml(sec_get(f"{base}/{cover}", raw=True, ttl=86400))), ".//amendmentType").upper()
+        if not table:  # 只改封面信息、不带持仓表的修正
+            out = {"acc": f["acc"], "report": f["report"], "filed": f["date"], "amend": amend or "COVER", "positions": []}
+            with _store_lock:
+                save_json(name, out)
+            return out
     if not table:
         raise ApiError(f"13F 申报里没有持仓表: {f['acc']}")
     root = strip_ns(parse_xml(sec_get(f"{base}/{table}", raw=True, ttl=86400)))
@@ -1751,26 +1761,52 @@ def info_table(cik, f):
         p = pos.setdefault(cusip, {"cusip": cusip, "name": txt(it, "nameOfIssuer"), "cls": txt(it, "titleOfClass"), "value": 0.0, "shares": 0.0})
         p["value"] += val
         p["shares"] += sh
-    out = {"acc": f["acc"], "report": f["report"], "filed": f["date"], "positions": list(pos.values())}
+    out = {"acc": f["acc"], "report": f["report"], "filed": f["date"], "amend": amend, "positions": list(pos.values())}
     with _store_lock:
         save_json(name, out)
     return out
 
 
+def quarter_holdings(cik, fs):
+    """某一季度的持仓：从最近一份原始申报或整份重报（RESTATEMENT）开始，再并入之后的补充申报（NEW HOLDINGS，
+    多是之前申请保密、后来公开的持仓）。只改封面的修正申报不影响持仓。fs 是同一季度的申报，任意顺序"""
+    base, extra = None, []
+    for f in sorted(fs, key=lambda f: (f["date"], f["acc"])):
+        t = info_table(cik, f)
+        kind = "ORIGINAL" if f["form"] == "13F-HR" else t.get("amend", "")
+        if kind in ("ORIGINAL", "RESTATEMENT"):
+            base, extra = t, []
+        elif kind == "NEW HOLDINGS" and base is not None:
+            extra.append(t)
+    if base is None:
+        return None
+    pos = {p["cusip"]: dict(p) for p in base["positions"]}
+    for t in extra:
+        for p in t["positions"]:
+            q = pos.setdefault(p["cusip"], {**p, "value": 0.0, "shares": 0.0})
+            q["value"] += p["value"]
+            q["shares"] += p["shares"]
+    return {**base, "filed": max(f["date"] for f in fs), "amended": sum(1 for f in fs if f["form"] != "13F-HR"),
+            "positions": list(pos.values())}
+
+
 def manager_13f(m):
     sub = submissions(m["cik"])
-    fs = [f for f in recent_filings(sub, {"13F-HR"}) if f["report"]]
-    seen, quarters = set(), []
-    for f in fs:  # 只看原始 13F-HR；修正申报（13F-HR/A）暂不处理，同一季度有多份时取最新那份
-        if f["report"] not in seen:
-            seen.add(f["report"])
-            quarters.append(f)
+    by_q = {}
+    for f in recent_filings(sub, {"13F-HR", "13F-HR/A"}):  # 新的在前
+        if f["report"]:
+            by_q.setdefault(f["report"], []).append(f)
+    quarters = []
+    for rep in sorted(by_q, reverse=True):
+        t = quarter_holdings(m["cik"], by_q[rep])
+        if t is not None:
+            quarters.append(t)
         if len(quarters) == 2:
             break
     if not quarters:
         raise ApiError("没有找到 13F-HR 申报")
-    cur = info_table(m["cik"], quarters[0])
-    prev = info_table(m["cik"], quarters[1]) if len(quarters) > 1 else {"positions": [], "report": None}
+    cur = quarters[0]
+    prev = quarters[1] if len(quarters) > 1 else {"positions": [], "report": None}
     P = {p["cusip"]: p for p in prev["positions"]}
     total = sum(p["value"] for p in cur["positions"]) or 1
     changes = []
@@ -1791,7 +1827,7 @@ def manager_13f(m):
     changes.sort(key=lambda c: (c["value"] or c.get("prev_value", 0)), reverse=True)
     count = {a: sum(1 for c in changes if c["act"] == a) for a in ("new", "add", "reduce", "exit", "hold")}
     return {"cik": m["cik"], "name": m["name"], "entity": sub.get("name"), "report": cur["report"], "prev_report": prev["report"],
-            "filed": cur["filed"], "total": total, "positions": len(cur["positions"]), "count": count, "changes": changes}
+            "filed": cur["filed"], "amended": cur.get("amended", 0), "total": total, "positions": len(cur["positions"]), "count": count, "changes": changes}
 
 
 def all_13f():

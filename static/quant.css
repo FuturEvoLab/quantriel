@@ -424,3 +424,10 @@ svg text { stroke: none; }
 .site-foot p { margin: 0; }
 .site-foot .risk-line { max-width: 760px; margin: 4px auto 6px; padding: 8px 12px; border: 1px solid color-mix(in srgb, #f59e0b 55%, transparent); background: color-mix(in srgb, #f59e0b 8%, transparent); color: var(--text); line-height: 1.6; }
 .site-foot .risk-line b { color: #f59e0b; margin-right: 8px; }
+/* 手机宽度：顶栏只留状态和跑马灯，南向资金表格在卡片内横向滚动，不撑宽整页 */
+@media (max-width: 600px) {
+  .hudbar { overflow: hidden; }
+  .hudbar #hud-watch, .hudbar .clock, .hudbar > .hb-fng { display: none; }
+  .sb-tables { grid-template-columns: minmax(0, 1fr); }
+  .sb-tables > div { min-width: 0; max-width: 100%; overflow-x: auto; }
+}

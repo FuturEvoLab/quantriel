@@ -600,3 +600,26 @@ class LegalPages(unittest.TestCase):
                 self.assertIn(f'data-lang="{lang}"', t, p)
             self.assertNotIn("<script>", t, p)
             self.assertFalse(re.search(r'<(?:script|link)[^>]+(?:src|href)="https?://', t), p)
+
+
+class Amendments13F(unittest.TestCase):
+    """13F-HR/A：整份重报替换原申报，补充申报并入，只改封面的不影响；最新季度只有修正时也能用"""
+    def test_merge(self):
+        F = lambda form, acc, d, rep="2026-09-30": {"form": form, "acc": acc, "date": d, "report": rep, "doc": "x.xml"}
+        P = lambda cusip, v, sh: {"cusip": cusip, "name": cusip, "cls": "COM", "value": v, "shares": sh}
+        tables = {
+            "o": {"amend": "", "positions": [P("A", 100, 10), P("B", 50, 5)]},
+            "n": {"amend": "NEW HOLDINGS", "positions": [P("C", 30, 3), P("A", 10, 1)]},
+            "c": {"amend": "COVER", "positions": []},
+            "r": {"amend": "RESTATEMENT", "positions": [P("A", 120, 12)]},
+        }
+        fake = lambda cik, f: {"acc": f["acc"], "report": f["report"], "filed": f["date"], **tables[f["acc"]]}
+        with mock.patch.object(s, "info_table", fake):
+            t = s.quarter_holdings(1, [F("13F-HR/A", "n", "2026-11-20"), F("13F-HR", "o", "2026-11-14"), F("13F-HR/A", "c", "2026-11-21")])
+            pos = {p["cusip"]: p for p in t["positions"]}
+            self.assertEqual((pos["A"]["shares"], pos["C"]["shares"], len(pos)), (11, 3, 3))
+            self.assertEqual((t["amended"], t["filed"]), (2, "2026-11-21"))
+            self.assertEqual(tables["o"]["positions"][0]["shares"], 10)  # 原数据没被改动
+            t = s.quarter_holdings(1, [F("13F-HR", "o", "2026-11-14"), F("13F-HR/A", "n", "2026-11-20"), F("13F-HR/A", "r", "2026-12-01")])
+            self.assertEqual([(p["cusip"], p["shares"]) for p in t["positions"]], [("A", 12)])
+            self.assertIsNone(s.quarter_holdings(1, [F("13F-HR/A", "n", "2026-11-20")]))

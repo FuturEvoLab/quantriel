@@ -206,7 +206,7 @@ function fundSummary() {
   return `<div class="card"><div class="card-head"><h3>基金概览</h3><span class="spacer"></span><span class="muted">点击行查看明细</span></div>
     <div class="table-wrap"><table class="f13-sum"><tr><th>基金</th><th>报告季度</th><th>申报日</th><th class="num">持仓数</th><th class="num">持仓市值</th>
       <th class="num">新建仓</th><th class="num">加仓</th><th class="num">减仓</th><th class="num">清仓</th></tr>
-    ${sm.f13.funds.map((f) => `<tr data-fund="${f.cik}" class="${f.cik === sm.fund ? "on" : ""}"><td><b>${esc(f.name)}</b></td><td class="mono">${esc(f.report)}</td><td class="mono muted">${esc(f.filed)}</td>
+    ${sm.f13.funds.map((f) => `<tr data-fund="${f.cik}" class="${f.cik === sm.fund ? "on" : ""}"><td><b>${esc(f.name)}</b></td><td class="mono">${esc(f.report)}</td><td class="mono muted">${esc(f.filed)}${f.amended ? ` <span class="chip" title="已并入这一季度的修正申报（13F-HR/A）">含修正</span>` : ""}</td>
       <td class="num">${f.positions}</td><td class="num">${fmtUsd(f.total)}</td>
       ${["new", "add", "reduce", "exit"].map((a) => `<td class="num"><b style="color:${actColor(a)}">${f.count[a]}</b></td>`).join("")}</tr>`).join("")}</table></div></div>`;
 }

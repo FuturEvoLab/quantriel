@@ -4,6 +4,27 @@
 
 const RELEASES = [
   {
+    v: "1.5.5", date: "2026-11-15", time: "10:34",
+    zh: [
+      "聪明钱：13F 机构持仓并入修正申报（13F-HR/A）——整份重报会替换原申报，补充公开的持仓会并入，列表上标“含修正”。",
+      "市场解读：美股、美元、黄金、原油的月度变化增加“小幅上涨 / 回落”一档，不再把 −2%～−5% 说成“波动不大”。",
+      "手机浏览：页面不再左右晃动（顶栏和南向资金表格不再撑宽页面），在线版提示条更紧凑。",
+      "在线版：分享链接时显示预览图和简介，新增 404 页面和网站地图，字体等静态文件缓存更久，打开更快。",
+    ],
+    ja: [
+      "スマートマネー：13F の保有に訂正報告（13F-HR/A）を反映します。全面訂正は元の報告を置き換え、後から公開された保有は追加し、一覧に「訂正反映」と表示します。",
+      "マーケット解説：米国株・ドル・金・原油の月間変化に「小幅に上昇 / 下落」の段階を追加し、−2%〜−5% を「大きな変動なし」と表示しないようにしました。",
+      "スマートフォン：画面が横に揺れないようにしました（上部バーと南向き資金の表が画面幅を広げていました）。オンライン版の案内バーもコンパクトにしました。",
+      "オンライン版：リンク共有時にプレビュー画像と説明が出るようにし、404 ページとサイトマップを追加、フォントなどのキャッシュを長くして表示を速くしました。",
+    ],
+    en: [
+      "Smart Money: 13F holdings now include amendment filings (13F-HR/A). A restatement replaces the original filing, newly disclosed holdings are added, and the list marks the fund as amended.",
+      "Market readout: monthly moves in US stocks, the dollar, gold and oil get a moderate tier, so a 2–5% fall is no longer described as little changed.",
+      "Phones: the page no longer scrolls sideways (the top bar and southbound tables were too wide), and the online demo's notice bar is more compact.",
+      "Online demo: shared links show a preview image and description, plus a 404 page, a sitemap and longer caching for fonts and other static files.",
+    ],
+  },
+  {
     v: "1.5.4", date: "2026-11-14", time: "17:01",
     zh: [
       "在线演示版搬到 quantriel.futurevolab.com，不需要也不接收任何 API Key 或邮箱，设置表单已锁定。",

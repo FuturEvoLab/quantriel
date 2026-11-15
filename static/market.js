@@ -137,7 +137,7 @@ function renderReadings() {
     vix.price >= 30 ? "波动率处于高位，市场避险情绪强" : vix.price >= 25 ? "波动率偏高" : vix.price <= 15 ? "波动率处于低位，市场较平静" : "波动率处于常规水平");
   const spx = q("^GSPC");
   if (spx?.chg1m != null) add(spx.chg1m <= -5 ? "bear" : spx.chg1m >= 5 ? "bull" : "flat", "S&P 500 · 1M", pct(spx.chg1m),
-    spx.chg1m <= -5 ? "美股一个月内明显回落" : spx.chg1m >= 5 ? "美股一个月内明显上涨" : "美股一个月内波动不大");
+    spx.chg1m <= -5 ? "美股一个月内明显回落" : spx.chg1m >= 5 ? "美股一个月内明显上涨" : spx.chg1m <= -2 ? "美股一个月内小幅回落" : spx.chg1m >= 2 ? "美股一个月内小幅上涨" : "美股一个月内波动不大");
   const tnx = q("^TNX");
   if (tnx?.abs1m != null) {
     const bp = Math.round(tnx.abs1m * 100);
@@ -145,16 +145,16 @@ function renderReadings() {
       bp >= 25 ? "长端收益率一个月内明显上行" : bp <= -25 ? "长端收益率一个月内明显下行" : "长端收益率一个月内变化不大", Math.abs(bp) >= 25 ? (bp > 0 ? "up" : "down") : undefined);
   }
   const dxy = q("DX-Y.NYB");
-  if (dxy?.chg1m != null) add("flat", "美元指数 · 1M", pct(dxy.chg1m), dxy.chg1m >= 2 ? "美元一个月内明显走强" : dxy.chg1m <= -2 ? "美元一个月内明显走弱" : "美元一个月内基本持平");
+  if (dxy?.chg1m != null) add("flat", "美元指数 · 1M", pct(dxy.chg1m), dxy.chg1m >= 2 ? "美元一个月内明显走强" : dxy.chg1m <= -2 ? "美元一个月内明显走弱" : dxy.chg1m >= 1 ? "美元一个月内小幅走强" : dxy.chg1m <= -1 ? "美元一个月内小幅走弱" : "美元一个月内基本持平");
   const hsi = q("^HSI");
   if (hsi?.chg1m != null && spx?.chg1m != null && Math.abs(hsi.chg1m - spx.chg1m) >= 5)
     add("flat", "港股 vs 美股 · 1M", `${pct(hsi.chg1m, 1)} / ${pct(spx.chg1m, 1)}`, hsi.chg1m > spx.chg1m ? "港股一个月内明显跑赢美股" : "港股一个月内明显跑输美股");
   const gold = q("GC=F");
   if (gold?.chg1m != null) add(gold.chg1m >= 5 ? "bull" : gold.chg1m <= -5 ? "bear" : "flat", "黄金 · 1M", pct(gold.chg1m),
-    gold.chg1m >= 5 ? "金价一个月内明显上涨" : gold.chg1m <= -5 ? "金价一个月内明显回落" : "金价一个月内波动不大");
+    gold.chg1m >= 5 ? "金价一个月内明显上涨" : gold.chg1m <= -5 ? "金价一个月内明显回落" : gold.chg1m >= 2 ? "金价一个月内小幅上涨" : gold.chg1m <= -2 ? "金价一个月内小幅回落" : "金价一个月内波动不大");
   const oil = q("CL=F");
   if (oil?.chg1m != null) add(oil.chg1m >= 8 ? "bull" : oil.chg1m <= -8 ? "bear" : "flat", "WTI 原油 · 1M", pct(oil.chg1m),
-    oil.chg1m >= 8 ? "油价一个月内明显上涨" : oil.chg1m <= -8 ? "油价一个月内明显下跌" : "油价一个月内波动不大");
+    oil.chg1m >= 8 ? "油价一个月内明显上涨" : oil.chg1m <= -8 ? "油价一个月内明显下跌" : oil.chg1m >= 3 ? "油价一个月内小幅上涨" : oil.chg1m <= -3 ? "油价一个月内小幅下跌" : "油价一个月内波动不大");
   const cu = q("HG=F");
   if (cu?.chg1m != null && gold?.chg1m != null) {
     const r = cu.chg1m - gold.chg1m;

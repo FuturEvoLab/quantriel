@@ -2,6 +2,14 @@
 
 版本号显示在「设置 → 服务」里；`/api/version` 也会返回。
 
+## 1.5.5 — 2026-11-15
+
+- **13F 修正申报**：`manager_13f` 现在同时读取 `13F-HR/A`。按季度分组、按提交时间排序：原始申报或整份重报（`RESTATEMENT`，从封面 `amendmentType` 读取）作为基准，之后的补充申报（`NEW HOLDINGS`）并入，只改封面的修正不影响持仓；只有补充申报、没有基准的季度跳过。基金列表在提交日期旁标“含修正”。离线测试 `tests/test_core.py::Amendments13F`。（尚未用真实 SEC 数据验证，需要设置页填写联系邮箱。）
+- **市场解读**：标普 500、美元指数、黄金、WTI 的 1 个月变化增加中间一档（标普 / 黄金 2–5%，美元 1–2%，原油 3–8%），文案为“小幅上涨 / 回落”。
+- **手机宽度**：≤600px 时顶栏隐藏自选数和时钟、南向资金表格在卡片内横向滚动，整页不再超出屏幕宽度；在线版提示条贴底变窄。
+- **在线版**：`build_demo.py` 加 meta description、canonical、Open Graph / Twitter 卡片（`demo/og.jpg` 1200×630）、apple-touch-icon、`404.html`（wrangler `not_found_handling: 404-page`）、`sitemap.xml`；`_headers` 给 `/fonts/*` 一年 immutable 缓存、`/vendor/*` 一周。
+- 改过的前端文件提高了 `?v=` 版本号，浏览器会取新文件。
+
 ## 1.5.4 — 2026-11-14
 
 ### 不让陌生人填 Key

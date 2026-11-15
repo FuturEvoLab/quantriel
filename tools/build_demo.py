@@ -33,6 +33,39 @@ HEADERS = """/*
   Strict-Transport-Security: max-age=31536000
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/vendor/*
+  Cache-Control: public, max-age=604800
+
+/og.jpg
+  Cross-Origin-Resource-Policy: cross-origin
+"""
+SITE = "https://quantriel.futurevolab.com"
+DESC = ("Quantriel (クオンツ株神 / 量化股神) — a free, open-source market monitor for US and Hong Kong stocks, rates, "
+        "gold and oil, with insider and 13F filings, CFTC positioning and news impact. Runs locally on free public data.")
+META = f"""<meta name="description" content="{DESC}">
+<link rel="canonical" href="{SITE}/">
+<meta name="theme-color" content="#04070b">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Quantriel">
+<meta property="og:title" content="Quantriel — market monitor demo">
+<meta property="og:description" content="{DESC}">
+<meta property="og:url" content="{SITE}/">
+<meta property="og:image" content="{SITE}/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@FuturEvoLab">"""
+PAGES = ("", "about.html", "disclaimer.html", "privacy.html", "legal.html")
+NOT_FOUND = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 — Quantriel</title><meta name="robots" content="noindex"><link rel="stylesheet" href="/legal.css?v=1"></head>
+<body><main class="legal-main" style="padding-top:12vh"><article><h1>404</h1>
+<p>このページは見つかりません · 页面不存在 · Page not found</p><p><a href="/">← Quantriel</a></p></article></main></body></html>
 """
 TICKER = ("^GSPC", "^HSI", "GC=F", "CL=F", "^VIX")  # 和 /api/ticker 一致
 
@@ -49,12 +82,12 @@ def main(out):
 
     shutil.rmtree(out, ignore_errors=True)
     shutil.copytree(os.path.join(ROOT, "static"), out, ignore=shutil.ignore_patterns("._*", ".DS_Store"))
-    for f in ("demo.js", "demo.css"):
+    for f in ("demo.js", "demo.css", "og.jpg", "apple-touch-icon.png"):
         shutil.copy(os.path.join(ROOT, "demo", f), out)
     html = open(os.path.join(out, "index.html"), encoding="utf-8").read()
     html, n = re.subn(r'(<script src="boot\.js[^"]*"></script>)', rf'\1\n<script src="demo.js" data-generated="{data["generated"]}"></script>', html, count=1)
     assert n == 1, "index.html 里找不到 boot.js"
-    html = html.replace("<title>量化股神</title>", "<title>量化股神 · Quantriel — Demo</title>")
+    html = html.replace("<title>量化股神</title>", "<title>Quantriel · クオンツ株神 · 量化股神 — Demo</title>\n" + META)
     # GitHub Pages 备用地址不支持 _headers，用 meta 补上 CSP（meta 里不能写 frame-ancestors）
     csp = re.search(r"Content-Security-Policy: (.*)", HEADERS).group(1).replace("frame-ancestors 'none'; ", "")
     html, n = re.subn(r"(<meta charset[^>]*>)", rf'\1\n<meta http-equiv="Content-Security-Policy" content="{csp}">', html, count=1)
@@ -65,6 +98,10 @@ def main(out):
     # GitHub Pages 继续用 futurevolab.github.io/quantriel/ 作备用地址，所以这里不写 CNAME
     # 安全响应头：Cloudflare 读取 _headers（GitHub Pages 会忽略它，作为普通文件发布，无害）
     open(os.path.join(out, "_headers"), "w").write(HEADERS)
+    open(os.path.join(out, "404.html"), "w", encoding="utf-8").write(NOT_FOUND)
+    day = time.strftime("%Y-%m-%d", time.gmtime(data["generated"]))
+    urls = "".join(f"<url><loc>{SITE}/{p.removesuffix('.html')}</loc><lastmod>{day}</lastmod></url>" for p in PAGES)
+    open(os.path.join(out, "sitemap.xml"), "w").write(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n')
     # wrangler 上传 docs/ 时跳过这些：exFAT 磁盘上每个文件都有 macOS 的 ._ 元数据副本，不能发布出去
     open(os.path.join(out, ".assetsignore"), "w").write("._*\n.DS_Store\n.nojekyll\n")
     json.dump(data, open(os.path.join(out, "demo-data.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"), allow_nan=False)
