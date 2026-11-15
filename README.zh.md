@@ -2,7 +2,7 @@
 
 [English](README.md) · [日本語](README.ja.md) · 中文 · 许可证：[AGPL-3.0](LICENSE) · [安全说明](SECURITY.md) · [第三方组件](THIRD_PARTY_NOTICES.md) · 作者：[@FuturEvoLab](https://x.com/FuturEvoLab)
 
-**在线演示：** https://quantriel.futurevolab.com/?lang=zh （无需安装，浏览录制好的数据快照）
+**在线演示：** https://quantriel.futurevolab.com/?lang=zh （无需安装，浏览每隔几小时自动更新的数据快照）
 
 本地运行的美股 / 港股 / 黄金原油大宗商品监控分析工具。Python 标准库服务端 + 原生 JS 前端（无需 pip、无需构建），HUD 深色主题，English / 日本語 / 中文 三语（默认英语）。界面风格与同一作者的「区块侦探 / Block Detective」一致。
 
@@ -98,7 +98,7 @@
 
 ## 在线演示
 
-`docs/` 是界面的静态副本：`demo.js` 拦截页面的 `/api/` 请求，用录好的数据快照回答，所以不需要后端，作为静态文件由 Cloudflare 托管在 quantriel.futurevolab.com（备用地址 futurevolab.github.io/quantriel/），用 `npx wrangler@4 deploy` 发布（见 `wrangler.jsonc`）。`tools/build_demo.py` 用一个全新的空数据目录录制快照（默认自选、不用任何 Key、不含个人数据）；演示版不能搜索、改设置或推送提醒（设置表单已锁定），也不含聪明钱（SEC 需要联系邮箱）。重新生成：`python3 tools/build_demo.py docs`。链接参数：`?lang=en|ja|zh`、`?tab=market|watch|portfolio|quant|smart|cot|news|settings`、`?view=tech`、`?skin=gold|light`。
+`docs/` 是界面的静态副本：`demo.js` 拦截页面的 `/api/` 请求，用录好的数据快照回答，所以不需要后端，作为静态文件由 Cloudflare 托管在 quantriel.futurevolab.com（备用地址 futurevolab.github.io/quantriel/），用 `npx wrangler@4 deploy` 发布（见 `wrangler.jsonc`）。`tools/build_demo.py` 用一个全新的空数据目录录制快照（默认自选、不用任何 Key、不含个人数据）；演示版不能搜索、改设置或推送提醒（设置表单已锁定），也不含聪明钱（SEC 需要联系邮箱）。重新生成：`python3 tools/build_demo.py docs`。GitHub Actions 定时任务（`.github/workflows/demo.yml`）在工作日每 2 小时、周末每天一次重新录制并发布；核心数据大面积缺失（例如数据源限流）时构建失败，线上继续用上一份快照。链接参数：`?lang=en|ja|zh`、`?tab=market|watch|portfolio|quant|smart|cot|news|settings`、`?view=tech`、`?skin=gold|light`。
 
 ## v2 计划
 

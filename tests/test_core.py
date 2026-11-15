@@ -569,6 +569,23 @@ class NewsAccuracy(unittest.TestCase):
         self.assertEqual(save.call_count, 2)
 
 
+
+class DemoQuality(unittest.TestCase):
+    """定时发布在线演示前的检查：核心数据大面积缺失时不发布"""
+    def test_quality_gate(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("build_demo", os.path.join(os.path.dirname(__file__), "..", "tools", "build_demo.py"))
+        bd = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bd)
+        ok = {"/api/market": {"indices": [{"price": 1}] * 7, "commods": [{"price": 1}] * 6},
+              "/api/watchlist/refresh": [{"sym": "A"}] * 5 + [{"sym": "B", "error": "x"}],
+              "/api/news": {"items": [{}] * 40}, "/api/technews": {"items": [{}] * 40}, "/api/cot": {"markets": [{}] * 5},
+              **{f"detail|S{i}": {} for i in range(15)}}
+        self.assertEqual(bd.quality_problems(ok), [])
+        blocked = {**ok, "/api/market": {"indices": [{"error": "429"}] * 7, "commods": [{"price": 1}] * 6}, "/api/news": {"items": []}}
+        self.assertEqual(len(bd.quality_problems(blocked)), 2)  # 行情被限流、新闻源取不到
+
+
 if __name__ == "__main__":
     unittest.main()
 

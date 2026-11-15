@@ -27,13 +27,13 @@
   let lang = "en";
   try { lang = localStorage.getItem("qs-lang") || "en"; } catch {}
   const T = {
-    en: { bar: "Online demo: a recorded data snapshot. Searching, settings and alerts are disabled.", get: "Get the full version (runs locally) ↗",
+    en: { bar: "Online demo: data snapshots refreshed every few hours. Searching, settings and alerts are disabled.", at: "Data as of", get: "Get the full version (runs locally) ↗",
           keys: "The online demo never asks for or accepts API keys or your email. In the full version they stay on your own computer and are sent only to the official data sites.",
           err: "The online demo only contains a recorded snapshot and cannot fetch new data or change settings. Download the full version to run it locally." },
-    ja: { bar: "オンラインデモ：記録済みのデータスナップショットです。検索・設定・通知は使えません。", get: "フル版をダウンロード（ローカルで実行）↗",
+    ja: { bar: "オンラインデモ：数時間ごとに更新されるデータのスナップショットです。検索・設定・通知は使えません。", at: "データ時点", get: "フル版をダウンロード（ローカルで実行）↗",
           keys: "オンラインデモでは API キーやメールアドレスを入力することはなく、受け付けもしません。フル版ではキーは自分の PC にだけ保存され、公式のデータ提供元にだけ送られます。",
           err: "オンラインデモには記録済みのスナップショットしか含まれておらず、新しいデータの取得や設定の変更はできません。フル版をダウンロードしてローカルで実行してください。" },
-    zh: { bar: "在线演示版：数据为录制好的快照，不能搜索、修改设置或推送提醒。", get: "下载完整版（本地运行）↗",
+    zh: { bar: "在线演示版：数据为每隔几小时自动更新的快照，不能搜索、修改设置或推送提醒。", at: "数据时间", get: "下载完整版（本地运行）↗",
           keys: "在线演示版不需要、也不接收任何 API Key 或邮箱。完整版里 Key 只保存在你自己的电脑上，只发给官方数据网站。",
           err: "在线演示版只包含录制好的数据快照，不能获取新数据或修改设置。完整功能请下载到本地运行。" },
   }[lang] || {};
@@ -88,8 +88,10 @@
     bar.setAttribute("translate", "no"); // 文案已按界面语言给出，不再经过自动翻译
     bar.innerHTML = `<b>DEMO</b><span>${T.bar}</span><span class="demo-when"></span><a href="${REPO}" target="_blank" rel="noopener">${T.get}</a>`;
     document.body.append(bar);
-    ready.then(() => { // 标出快照日期，免得把旧数据当成实时行情
-      if (data.generated) bar.querySelector(".demo-when").textContent = "📅 " + new Date(data.generated * 1000).toISOString().slice(0, 10);
+    ready.then(() => { // 标出快照时间（访客本地时区），免得把快照当成实时行情
+      if (!data.generated) return;
+      const when = new Intl.DateTimeFormat({ en: "en", ja: "ja", zh: "zh-CN" }[lang] || "en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
+      bar.querySelector(".demo-when").textContent = `${T.at} ${when.format(new Date(data.generated * 1000))}`;
     });
   });
 })();

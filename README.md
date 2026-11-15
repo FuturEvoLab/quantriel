@@ -4,7 +4,7 @@ English · [日本語](README.ja.md) · [中文](README.zh.md) · License: [AGPL
 
 [![tests](https://github.com/FuturEvoLab/quantriel/actions/workflows/tests.yml/badge.svg)](https://github.com/FuturEvoLab/quantriel/actions/workflows/tests.yml)
 
-**Online demo:** https://quantriel.futurevolab.com/?lang=en (no install; browse a recorded data snapshot)
+**Online demo:** https://quantriel.futurevolab.com/?lang=en (no install; browse a data snapshot refreshed every few hours)
 
 Watch US and Hong Kong stocks, indices, rates, the dollar, gold, oil and other commodity futures on one screen. The tool also tracks watchlist alerts, insider buying, hedge-fund positioning, energy inventories and news drivers, and everything runs on your own computer.
 
@@ -73,7 +73,7 @@ The full specification and limitations are in the Chinese [README.zh.md](README.
 
 ## Online demo
 
-The demo in `docs/` is a static copy of the UI that answers its API calls from a recorded snapshot, so it runs as static files with no backend. It is served by Cloudflare at quantriel.futurevolab.com, with futurevolab.github.io/quantriel/ as a backup, and deployed with `npx wrangler@4 deploy` (see `wrangler.jsonc`). `tools/build_demo.py` records the snapshot with a fresh, empty data folder (default watchlist, no keys, no personal data). Searching, settings and alerts are disabled, the Settings form is locked, and Smart Money is not included because SEC requires a contact email. Rebuild it with `python3 tools/build_demo.py docs`. Link parameters: `?lang=en|ja|zh`, `?tab=market|watch|portfolio|quant|smart|cot|news|settings`, `?view=tech`, `?skin=gold|light`.
+The demo in `docs/` is a static copy of the UI that answers its API calls from a recorded snapshot, so it runs as static files with no backend. It is served by Cloudflare at quantriel.futurevolab.com, with futurevolab.github.io/quantriel/ as a backup, and deployed with `npx wrangler@4 deploy` (see `wrangler.jsonc`). `tools/build_demo.py` records the snapshot with a fresh, empty data folder (default watchlist, no keys, no personal data). Searching, settings and alerts are disabled, the Settings form is locked, and Smart Money is not included because SEC requires a contact email. Rebuild it with `python3 tools/build_demo.py docs`. A scheduled GitHub Actions workflow (`.github/workflows/demo.yml`) re-records the snapshot every 2 hours on weekdays and once a day at weekends and deploys it; if the core data is mostly missing (for example a source is throttling), the build fails and the previous snapshot stays online. Link parameters: `?lang=en|ja|zh`, `?tab=market|watch|portfolio|quant|smart|cot|news|settings`, `?view=tech`, `?skin=gold|light`.
 
 ## Running the tests
 

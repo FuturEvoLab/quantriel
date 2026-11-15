@@ -82,6 +82,9 @@ def main(out):
         data = record()
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    bad = quality_problems(data)
+    if bad:  # 数据源大面积失败（被限流、网络问题）：不覆盖输出目录，线上继续用上一份快照
+        sys.exit("快照不完整，没有生成：\n  " + "\n  ".join(bad))
 
     shutil.rmtree(out, ignore_errors=True)
     shutil.copytree(os.path.join(ROOT, "static"), out, ignore=shutil.ignore_patterns("._*", ".DS_Store"))
@@ -111,6 +114,18 @@ def main(out):
     json.dump(data, open(os.path.join(out, "demo-data.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     size = os.path.getsize(os.path.join(out, "demo-data.json")) // 1024
     print(f"演示版已生成：{out}（{len(data)} 份接口数据，demo-data.json {size} KB）")
+
+
+def quality_problems(d):
+    """核心数据至少要有大部分：行情、自选、品种详情、新闻、COT。南向资金、EIA（公共 DEMO_KEY 常被用完）等失败不拦，页面会显示各自的错误"""
+    m = d.get("/api/market") or {}
+    quotes = [x for x in m.get("indices", []) + m.get("commods", []) if x.get("price") is not None]
+    rows = [r for r in d.get("/api/watchlist/refresh") or [] if not r.get("error")]
+    checks = (("行情", len(quotes), 10), ("自选", len(rows), 4), ("品种详情", sum(k.startswith("detail|") for k in d), 12),
+              ("大宗商品新闻", len((d.get("/api/news") or {}).get("items", [])), 30),
+              ("科技新闻", len((d.get("/api/technews") or {}).get("items", [])), 30),
+              ("COT", len((d.get("/api/cot") or {}).get("markets", [])), 3))
+    return [f"{name}只有 {n} 项（至少需要 {need}）" for name, n, need in checks if n < need]
 
 
 def record():

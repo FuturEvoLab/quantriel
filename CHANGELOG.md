@@ -10,6 +10,7 @@
 - **13F 修正**：金额单位按提交日期（2023-01-03 之前为千美元）判断；同一天提交时原始申报排在修正之前；修正申报取不到时跳过并返回 `amend_skipped`（列表标“修正未取到”）；`amended` / `filed` 只算真正并入持仓的申报。
 - **版本公告**：公告功能上线前的老用户固定按 1.5.2 计算未读；在线版通过带参数的链接首次打开时不弹公告（`window.QS_FRESH_VISIT`）。
 - **在线版**：标签页标题切换语言后保留 “— Demo”；404 页用完整网址引用样式和首页（GitHub Pages 备用地址也正常）；`/og.jpg` 先去掉全局 `Cross-Origin-Resource-Policy` 再设 `cross-origin`；`<title>` 替换加断言。
+- **在线版定时更新**：新增 `.github/workflows/demo.yml`，工作日每 2 小时、周末每天一次重新录制快照并用 wrangler 发布（需要仓库 Secrets `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`）；`build_demo.py` 增加完整性检查（行情、自选、品种详情、新闻、COT），不完整时失败退出、不覆盖输出；提示条显示快照的具体时间（访客本地时区）。
 - **缓存**：字体文件名不带版本号，本地服务和在线版都改为缓存 30 天、不标 immutable。
 
 ## 1.5.5 — 2026-11-15
