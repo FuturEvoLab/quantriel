@@ -13,6 +13,8 @@
   }
   const params = new URLSearchParams(location.search);
   const set = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+  // 写入链接参数之前先看是不是第一次来：是的话告诉版本公告别把这次当成“老用户升级”而弹窗
+  try { window.QS_FRESH_VISIT = !["qs-tab", "qs-lang", "qs-theme", "qs-seen-version"].some((k) => localStorage.getItem(k)); } catch {}
   if (["en", "ja", "zh"].includes(params.get("lang"))) set("qs-lang", params.get("lang"));
   const TABS = ["market", "watch", "portfolio", "quant", "smart", "cot", "news", "settings"];
   if (TABS.includes(params.get("tab"))) set("qs-tab", params.get("tab"));
@@ -60,6 +62,10 @@
   };
 
   document.addEventListener("DOMContentLoaded", () => {
+    // 切换语言时页面会把标题改成本地化名称：每次都补回 “— Demo”，免得和本地完整版的标签页分不清
+    const keepDemoTitle = () => { if (!document.title.endsWith(" — Demo")) document.title += " — Demo"; };
+    new MutationObserver(keepDemoTitle).observe(document.querySelector("title"), { childList: true, characterData: true, subtree: true });
+    keepDemoTitle();
     const style = document.createElement("link");
     style.rel = "stylesheet";
     style.href = base + "demo.css";

@@ -237,6 +237,7 @@ button:disabled { opacity: .55; cursor: progress; }
 .badge.big { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .chip { font-size: 11.5px; color: var(--muted); background: var(--surface-3); padding: 1px 9px; border-radius: 20px; }
 .chip:empty { display: none; }
+.chip.warn { color: #f59e0b; background: color-mix(in srgb, #f59e0b 14%, transparent); }
 
 /* ---------------- 卡片与表格 ---------------- */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-top: 12px; box-shadow: var(--shadow); }
@@ -272,6 +273,7 @@ td a.mono:hover { color: var(--accent); }
 .inspector table { font-size: 12.5px; }
 .inspector th, .inspector td { padding: 6px 8px; }
 table.plain td { border: 0; padding: 5px 0; }
+#tab-settings table.plain td { white-space: normal; overflow-wrap: anywhere; } /* 设置页的说明表格（服务信息、数据源）：文字要能换行，手机上不撑宽页面 */
 table.plain td:first-child { color: var(--muted); width: 90px; }
 table.plain tr:hover td { background: none; }
 
@@ -299,7 +301,7 @@ table.plain tr:hover td { background: none; }
 /* 设置 */
 .settings-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; align-items: start; }
 .settings-grid .card { margin: 0; }
-@media (max-width: 1000px) { .settings-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1000px) { .settings-grid { grid-template-columns: minmax(0, 1fr); } } /* 1fr 不能缩到内容最小宽度以下，手机上整页会横向滚动 */
 .stack { display: flex; flex-direction: column; gap: 18px; }
 .setting { display: flex; flex-direction: column; gap: 6px; }
 .setting-head { display: flex; align-items: center; gap: 8px; }

@@ -618,8 +618,19 @@ class Amendments13F(unittest.TestCase):
             t = s.quarter_holdings(1, [F("13F-HR/A", "n", "2026-11-20"), F("13F-HR", "o", "2026-11-14"), F("13F-HR/A", "c", "2026-11-21")])
             pos = {p["cusip"]: p for p in t["positions"]}
             self.assertEqual((pos["A"]["shares"], pos["C"]["shares"], len(pos)), (11, 3, 3))
-            self.assertEqual((t["amended"], t["filed"]), (2, "2026-11-21"))
+            self.assertEqual((t["amended"], t["filed"]), (1, "2026-11-20"))  # 只改封面的修正（11-21）不算“含修正”，也不改提交日期
             self.assertEqual(tables["o"]["positions"][0]["shares"], 10)  # 原数据没被改动
             t = s.quarter_holdings(1, [F("13F-HR", "o", "2026-11-14"), F("13F-HR/A", "n", "2026-11-20"), F("13F-HR/A", "r", "2026-12-01")])
             self.assertEqual([(p["cusip"], p["shares"]) for p in t["positions"]], [("A", 12)])
             self.assertIsNone(s.quarter_holdings(1, [F("13F-HR/A", "n", "2026-11-20")]))
+            # 同一天提交：原始申报先于修正处理，补充申报不会因为“还没有原始申报”被丢掉
+            t = s.quarter_holdings(1, [F("13F-HR/A", "n", "2026-11-14"), F("13F-HR", "o", "2026-11-14")])
+            self.assertEqual({p["cusip"] for p in t["positions"]}, {"A", "B", "C"})
+
+        def flaky(cik, f):
+            if f["acc"] == "n":
+                raise s.ApiError("SEC 504")
+            return fake(cik, f)
+        with mock.patch.object(s, "info_table", flaky):  # 某份修正取不到：跳过它，原始申报照常可用
+            t = s.quarter_holdings(1, [F("13F-HR", "o", "2026-11-14"), F("13F-HR/A", "n", "2026-11-20")])
+            self.assertEqual((len(t["positions"]), t["amend_skipped"], t["amended"]), (2, 1, 0))

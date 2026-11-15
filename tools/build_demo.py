@@ -34,13 +34,15 @@ HEADERS = """/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
 
+# 字体文件名不带版本号：缓存 30 天，不标 immutable
 /fonts/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=2592000
 
 /vendor/*
   Cache-Control: public, max-age=604800
 
 /og.jpg
+  ! Cross-Origin-Resource-Policy
   Cross-Origin-Resource-Policy: cross-origin
 """
 SITE = "https://quantriel.futurevolab.com"
@@ -61,11 +63,12 @@ META = f"""<meta name="description" content="{DESC}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@FuturEvoLab">"""
 PAGES = ("", "about.html", "disclaimer.html", "privacy.html", "legal.html")
-NOT_FOUND = """<!doctype html>
+# 404 页用完整网址引用样式和首页：GitHub Pages 备用地址（/quantriel/ 子路径下）也能正常显示
+NOT_FOUND = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>404 — Quantriel</title><meta name="robots" content="noindex"><link rel="stylesheet" href="/legal.css?v=1"></head>
+<title>404 — Quantriel</title><meta name="robots" content="noindex"><link rel="stylesheet" href="{SITE}/legal.css?v=1"></head>
 <body><main class="legal-main" style="padding-top:12vh"><article><h1>404</h1>
-<p>このページは見つかりません · 页面不存在 · Page not found</p><p><a href="/">← Quantriel</a></p></article></main></body></html>
+<p>このページは見つかりません · 页面不存在 · Page not found</p><p><a href="{SITE}/">← Quantriel</a></p></article></main></body></html>
 """
 TICKER = ("^GSPC", "^HSI", "GC=F", "CL=F", "^VIX")  # 和 /api/ticker 一致
 
@@ -87,7 +90,8 @@ def main(out):
     html = open(os.path.join(out, "index.html"), encoding="utf-8").read()
     html, n = re.subn(r'(<script src="boot\.js[^"]*"></script>)', rf'\1\n<script src="demo.js" data-generated="{data["generated"]}"></script>', html, count=1)
     assert n == 1, "index.html 里找不到 boot.js"
-    html = html.replace("<title>量化股神</title>", "<title>Quantriel · クオンツ株神 · 量化股神 — Demo</title>\n" + META)
+    html, n = re.subn(r"<title>量化股神</title>", lambda m: "<title>Quantriel · クオンツ株神 · 量化股神 — Demo</title>\n" + META, html, count=1)
+    assert n == 1, "index.html 的 <title> 变了：分享用的 meta 标签会整组丢失"
     # GitHub Pages 备用地址不支持 _headers，用 meta 补上 CSP（meta 里不能写 frame-ancestors）
     csp = re.search(r"Content-Security-Policy: (.*)", HEADERS).group(1).replace("frame-ancestors 'none'; ", "")
     html, n = re.subn(r"(<meta charset[^>]*>)", rf'\1\n<meta http-equiv="Content-Security-Policy" content="{csp}">', html, count=1)

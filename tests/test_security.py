@@ -67,8 +67,8 @@ class Security(unittest.TestCase):
         self.assertEqual(st, 403)  # 千万不能真的重启测试进程
 
     def test_config_never_echoed(self):
-        st, _, data = self.write({"fred_key": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "sec_email": "me@example.com"})
-        self.assertEqual(st, 200)
+        st, _, data = self.write({"fred_key": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "sec_email": "o'brien+qs@example.com"})  # 带 ' 和 + 的合法邮箱
+        self.assertEqual(st, 200, data)
         self.assertNotIn(b"a1b2c3d4e5f60718293a4b5c6d7e8f90", data)
         self.assertNotIn(b"example.com", data)
         self.assertEqual(json.loads(data)["fred_key"], True)
@@ -76,7 +76,7 @@ class Security(unittest.TestCase):
     def test_key_format_checked_and_empty_deletes(self):
         """格式不对的 Key 不保存；发空值等于删除；不再使用的 finnhub_key 启动时清掉"""
         s.save_json("secrets.json", {"fred_key": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "finnhub_key": "x"})
-        for bad in ({"fred_key": "short"}, {"eia_key": "has space 1234567890abc"}, {"sec_email": "nope"}, {"fred_key": 123}):
+        for bad in ({"fred_key": "short"}, {"eia_key": "has space 1234567890abc"}, {"sec_email": "nope"}, {"sec_email": "a b@example.com"}, {"fred_key": 123}):
             st, _, _ = self.write(bad)
             self.assertEqual(st, 400, bad)
         s.migrate_secrets()
@@ -156,10 +156,10 @@ class Security(unittest.TestCase):
     def test_long_cache_only_for_successful_static_files(self):
         st, h, _ = self.req("GET", "/fonts/fonts.css")
         self.assertEqual(st, 200)
-        self.assertIn("immutable", h["Cache-Control"])
+        self.assertEqual(h["Cache-Control"], "public, max-age=2592000")
         st, h, _ = self.req("GET", "/fonts/missing.woff2")
         self.assertEqual(st, 404)
-        self.assertEqual(h["Cache-Control"], "no-cache")  # 404 不能被浏览器缓存一年
+        self.assertEqual(h["Cache-Control"], "no-cache")  # 404 不能被浏览器长期缓存
         st, h, _ = self.req("GET", "/style.css")
         self.assertEqual(h["Cache-Control"], "no-cache")
 

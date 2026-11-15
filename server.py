@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "1.5.5"
+VERSION = "1.5.6"
 HOST, PORT = "127.0.0.1", int(os.environ.get("PORT", "8767"))
 ROOT = os.path.dirname(os.path.abspath(__file__))
 STATIC = os.path.join(ROOT, "static")
@@ -87,7 +87,7 @@ KEY_ENV = (("fred_key", "FRED_API_KEY"), ("eia_key", "EIA_API_KEY"), ("sec_email
 # 保存前检查格式：只接受官方格式的 Key（防止把别的东西拼进请求网址），邮箱只用于 SEC 的 User-Agent
 KEY_FORMAT = {"fred_key": (r"^[a-z0-9]{32}$", "FRED API Key 应为 32 位小写字母和数字"),
               "eia_key": (r"^[A-Za-z0-9]{20,64}$", "EIA API Key 应为 20–64 位字母和数字"),
-              "sec_email": (r"^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}$", "邮箱格式不正确")}
+              "sec_email": (r"^[\x21-\x3f\x41-\x7e]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}$", "邮箱格式不正确")}  # 本地部分允许所有可打印 ASCII（o'brien、a&b 等），空格和换行不行
 UNUSED_SECRETS = ("finnhub_key",)  # 旧版本预留、从未使用过的 Key：启动时从 secrets.json 删掉，不留在本机
 SYM_RE = r"^[A-Z0-9^=.\-]{1,20}$"
 
@@ -1747,7 +1747,7 @@ def info_table(cik, f):
     if not table:
         raise ApiError(f"13F 申报里没有持仓表: {f['acc']}")
     root = strip_ns(parse_xml(sec_get(f"{base}/{table}", raw=True, ttl=86400)))
-    scale = 1000 if f["report"] and f["report"] < "2022-12-31" else 1  # 2023 年前的申报单位是千美元
+    scale = 1000 if f["date"] < "2023-01-03" else 1  # 2023-01-03 之前提交的申报单位是千美元：看提交日期，不看报告期（旧季度的修正可能是之后才交的）
     pos = {}
     for it in root.iter("infoTable"):
         if txt(it, "putCall"):
@@ -1770,9 +1770,16 @@ def info_table(cik, f):
 def quarter_holdings(cik, fs):
     """某一季度的持仓：从最近一份原始申报或整份重报（RESTATEMENT）开始，再并入之后的补充申报（NEW HOLDINGS，
     多是之前申请保密、后来公开的持仓）。只改封面的修正申报不影响持仓。fs 是同一季度的申报，任意顺序"""
-    base, extra = None, []
-    for f in sorted(fs, key=lambda f: (f["date"], f["acc"])):
-        t = info_table(cik, f)
+    base, extra, skipped = None, [], 0
+    # 同一天提交时原始申报排在修正之前（编号前缀是代理机构的 CIK，不代表先后）
+    for f in sorted(fs, key=lambda f: (f["date"], f["form"] != "13F-HR", f["acc"])):
+        try:
+            t = info_table(cik, f)
+        except Exception:  # noqa: BLE001 — 某份修正取不到或格式坏了：跳过它，不让整个基金的结果失败；原始申报失败照常报错
+            if f["form"] == "13F-HR":
+                raise
+            skipped += 1
+            continue
         kind = "ORIGINAL" if f["form"] == "13F-HR" else t.get("amend", "")
         if kind in ("ORIGINAL", "RESTATEMENT"):
             base, extra = t, []
@@ -1786,8 +1793,9 @@ def quarter_holdings(cik, fs):
             q = pos.setdefault(p["cusip"], {**p, "value": 0.0, "shares": 0.0})
             q["value"] += p["value"]
             q["shares"] += p["shares"]
-    return {**base, "filed": max(f["date"] for f in fs), "amended": sum(1 for f in fs if f["form"] != "13F-HR"),
-            "positions": list(pos.values())}
+    used = [base] + extra  # “含修正”只算真正并入持仓的修正（整份重报 + 补充申报），只改封面的不算
+    return {**base, "filed": max(t["filed"] for t in used), "amended": sum(1 for t in used if t.get("amend")),
+            "amend_skipped": skipped, "positions": list(pos.values())}
 
 
 def manager_13f(m):
@@ -1827,7 +1835,7 @@ def manager_13f(m):
     changes.sort(key=lambda c: (c["value"] or c.get("prev_value", 0)), reverse=True)
     count = {a: sum(1 for c in changes if c["act"] == a) for a in ("new", "add", "reduce", "exit", "hold")}
     return {"cik": m["cik"], "name": m["name"], "entity": sub.get("name"), "report": cur["report"], "prev_report": prev["report"],
-            "filed": cur["filed"], "amended": cur.get("amended", 0), "total": total, "positions": len(cur["positions"]), "count": count, "changes": changes}
+            "filed": cur["filed"], "amended": cur.get("amended", 0), "amend_skipped": cur.get("amend_skipped", 0), "total": total, "positions": len(cur["positions"]), "count": count, "changes": changes}
 
 
 def all_13f():
@@ -2871,7 +2879,7 @@ class Handler(SimpleHTTPRequestHandler):
     # 按 1.0 处理，客户端才能收到 400 / 414 / 505
     default_request_version = "HTTP/1.0"
     timeout = 60
-    LONG_CACHE = ("/fonts/", "/vendor/")  # 字体文件名带版本号、第三方库用 ?v= 区分版本：可以长期缓存，其他文件改了要立刻生效
+    LONG_CACHE = ("/fonts/", "/vendor/")  # 字体和第三方库很少变：缓存 30 天（文件名不带版本号，所以不标 immutable）；其他文件改了要立刻生效
 
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=STATIC, **kw)
@@ -2896,7 +2904,7 @@ class Handler(SimpleHTTPRequestHandler):
         # 请求行本身就不合法时（HTTP 版本错误、URL 过长）send_error 在解析出 path 之前就会到这里
         path = urllib.parse.urlparse(getattr(self, "path", "") or "").path
         long_cache = path.startswith(self.LONG_CACHE) and getattr(self, "_status", 0) in (200, 304)
-        self.send_header("Cache-Control", "public, max-age=31536000, immutable" if long_cache else "no-cache")
+        self.send_header("Cache-Control", "public, max-age=2592000" if long_cache else "no-cache")
         for k, v in self.SECURITY_HEADERS.items():
             self.send_header(k, v)
         super().end_headers()
@@ -3181,7 +3189,7 @@ class Handler(SimpleHTTPRequestHandler):
                         if k in b:
                             v = str(b[k]).strip()[:200]
                             pat, msg = KEY_FORMAT[k]
-                            if v and not re.match(pat, v):
+                            if v and not re.fullmatch(pat, v):
                                 raise ApiError(msg)
                             if v:
                                 sec[k] = v

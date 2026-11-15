@@ -4,6 +4,27 @@
 
 const RELEASES = [
   {
+    v: "1.5.6", date: "2026-11-15", time: "12:51",
+    zh: [
+      "设置：点击 API Key 一栏的标题或说明文字时会误触“删除”提示，现在只会把光标移到输入框。",
+      "设置：SEC 联系邮箱接受 o'brien@… 这类带特殊字符的合法地址；手机上设置页不再左右滚动。",
+      "聪明钱：13F 修正申报按提交日期换算金额单位（2023 年后交的旧季度修正不再大 1000 倍）；某份修正暂时取不到时只跳过它并标“修正未取到”，不再让整只基金失败；“含修正”只在修正真的改变了持仓时显示。",
+      "版本公告：从 1.5.2 或更早版本升级时能看到之后的全部更新；在线版第一次通过链接打开时不再弹出公告。",
+    ],
+    ja: [
+      "設定：API キー欄の見出しや説明文をクリックすると「削除」の確認が出てしまう問題を修正し、入力欄にカーソルが移るようにしました。",
+      "設定：SEC 連絡先メールで o'brien@… のような記号を含む正しいアドレスを受け付けます。スマートフォンで設定ページが横にスクロールしないようにしました。",
+      "スマートマネー：13F の訂正報告は提出日で金額の単位を判断します（2023 年以降に提出された古い四半期の訂正が 1000 倍にならないように）。訂正報告を一時的に取得できない場合はそれだけを飛ばして「訂正未取得」と表示し、ファンド全体をエラーにしません。「訂正反映」は保有が実際に変わった場合だけ表示します。",
+      "更新情報：1.5.2 以前から更新した場合、それ以降のすべての更新を表示します。オンライン版をリンクから初めて開いたときはお知らせを出しません。",
+    ],
+    en: [
+      "Settings: clicking the title or help text of an API key row no longer opens the Delete prompt; it focuses the input.",
+      "Settings: the SEC contact email accepts valid addresses with symbols such as o'brien@…, and the Settings page no longer scrolls sideways on phones.",
+      "Smart Money: 13F amendments use the filing date to pick value units (amendments for old quarters filed after 2023 are no longer 1000× too large). An amendment that can't be fetched is skipped and marked \"amendment missing\" instead of failing the whole fund, and \"amended\" only shows when an amendment actually changed the holdings.",
+      "What's new: upgrading from 1.5.2 or earlier shows every update since then, and the online demo no longer pops up the notes on a first visit from a link.",
+    ],
+  },
+  {
     v: "1.5.5", date: "2026-11-15", time: "10:34",
     zh: [
       "聪明钱：13F 机构持仓并入修正申报（13F-HR/A）——整份重报会替换原申报，补充公开的持仓会并入，列表上标“含修正”。",
@@ -203,6 +224,8 @@ function releaseHtml(r, isNew) {
   </article>`;
 }
 
+const WN_BEFORE = "1.5.2"; // “版本公告”功能上线（1.5.3）之前的最后一个版本：固定值，不随新版本漂移
+
 function seenVersion() {
   try { return localStorage.getItem(WN_SEEN); } catch { return null; }
 }
@@ -244,9 +267,10 @@ RERENDER.push(() => { renderWhatsNewList(); if (!$("#wn-modal").hidden) openWhat
 (function initWhatsNew() {
   let returning = false;
   try { returning = !!(localStorage.getItem("qs-tab") || localStorage.getItem("qs-lang") || localStorage.getItem("qs-theme")); } catch {}
+  if (window.QS_FRESH_VISIT) returning = false;  // 在线演示：这些设置是链接参数刚写进去的，不是老用户
   const seen = seenVersion();
   if (!seen && !returning) markSeen();
-  else if (!seen) try { localStorage.setItem(WN_SEEN, RELEASES[1] ? RELEASES[1].v : "0.0.0"); } catch {}  // 公告功能上线前的老用户：当作看过上一版
+  else if (!seen) try { localStorage.setItem(WN_SEEN, WN_BEFORE); } catch {}  // 公告功能上线前的老用户：当作看过 1.5.2，之后的版本都算新
   const unseen = unseenReleases();
   $("#wn-badge").hidden = !unseen.length;
   renderWhatsNewList();
