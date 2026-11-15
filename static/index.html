@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%2304070b'/%3E%3Cpath d='M10 72H30L35 66L40 72H46L54 28L62 94L68 62L73 70H82L90 46L96 54L110 34' fill='none' stroke='%2338bdf8' stroke-width='9' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='110' cy='34' r='8' fill='%23ffc93c'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="preload" href="fonts/Inter-0.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <link rel="stylesheet" href="hud.css?v=3">
 <link rel="stylesheet" href="nav.css?v=2">
 <link rel="stylesheet" href="market.css?v=3">
@@ -241,8 +241,8 @@
       <form id="watch-form" class="card form-card">
         <div class="form-title">添加 / 修改自选</div>
         <div class="form-row">
-          <input id="w-sym" placeholder="代码，如 AAPL / 0700.HK / GC=F / ^HSI" spellcheck="false" class="mono-input grow">
-          <input id="w-label" placeholder="名称（可选）" class="grow">
+          <input id="w-sym" aria-label="代码" placeholder="代码，如 AAPL / 0700.HK / GC=F / ^HSI" spellcheck="false" class="mono-input grow">
+          <input id="w-label" aria-label="名称" placeholder="名称（可选）" class="grow">
           <label class="field"><span>涨跌幅阈值</span><input id="w-move" type="number" min="0" step="0.5" value="3" class="w-sm"><em>%</em></label>
           <label class="field"><span>放量倍数</span><input id="w-vol" type="number" min="0" step="0.5" value="2" class="w-sm"><em>×</em></label>
           <label class="switch" title="RSI(14) 当天升破 70 或跌破 30 时提醒（昨天收盘还不在该区间）"><input id="w-rsi" type="checkbox" checked><i></i>RSI 超买 / 超卖</label>
@@ -281,10 +281,10 @@
       <form id="pf-form" class="card form-card">
         <div class="form-title">添加 / 修改持仓</div>
         <div class="form-row">
-          <input id="pf-sym" placeholder="代码，如 AAPL / 0700.HK / GC=F" spellcheck="false" class="mono-input grow" required>
+          <input id="pf-sym" aria-label="代码" placeholder="代码，如 AAPL / 0700.HK / GC=F" spellcheck="false" class="mono-input grow" required>
           <label class="field"><span>股数</span><input id="pf-shares" type="number" min="0" step="any" class="w-md mono-input" required></label>
           <label class="field"><span>平均成本</span><input id="pf-cost" type="number" min="0" step="any" class="w-md mono-input" required></label>
-          <input id="pf-note" placeholder="备注（可选）" class="grow">
+          <input id="pf-note" aria-label="备注" placeholder="备注（可选）" class="grow">
           <button class="primary">保存持仓</button>
         </div>
       </form>
@@ -307,7 +307,7 @@
       <form id="ql-form" class="card form-card">
         <div class="form-title">回测设置</div>
         <div class="form-row">
-          <input id="ql-sym" placeholder="代码，如 AAPL / 0700.HK / GC=F / ^GSPC" spellcheck="false" class="mono-input grow" required>
+          <input id="ql-sym" aria-label="代码" placeholder="代码，如 AAPL / 0700.HK / GC=F / ^GSPC" spellcheck="false" class="mono-input grow" required>
           <label class="field"><span>策略</span><select id="ql-strategy"><option value="ma_cross">均线金叉 / 死叉（20 / 50 日）</option><option value="trend200">200 日趋势</option><option value="rsi_mr">RSI 均值回归</option><option value="buyhold">买入持有</option></select></label>
           <label class="field"><span>区间</span><select id="ql-range"><option value="2y">2 年</option><option value="5y" selected>5 年</option><option value="10y">10 年</option></select></label>
           <label class="field" title="每次换仓的成本，1 bp = 0.01%"><span>手续费</span><input id="ql-fee" type="number" min="0" max="100" step="1" value="5" class="w-sm mono-input"><em>bp</em></label>
@@ -347,7 +347,7 @@
         <form id="ins-form" class="searchbar">
           <div class="search-input">
             <svg viewBox="0 0 24 24"><path d="M3 17l5.5-5.5 4 4L21 7"/><path d="M15 7h6v6"/></svg>
-            <input id="ins-sym" placeholder="美股代码，如 AAPL / JPM / KO" autocomplete="off" spellcheck="false">
+            <input id="ins-sym" aria-label="美股代码" placeholder="美股代码，如 AAPL / JPM / KO" autocomplete="off" spellcheck="false">
           </div>
           <select id="ins-limit" title="扫描最近多少份 Form 4 申报" aria-label="扫描份数">
             <option value="80">最近 80 份申报</option>
@@ -602,8 +602,8 @@
   <div class="lines" id="boot-lines"></div>
   <div class="skip">CLICK TO SKIP</div>
 </div>
-<script src="i18n.js?v=12"></script>
-<script src="app.js?v=10"></script>
+<script src="i18n.js?v=13"></script>
+<script src="app.js?v=11"></script>
 <script src="market.js?v=4"></script>
 <script src="corr.js?v=2"></script>
 <script src="smart.js?v=5"></script>

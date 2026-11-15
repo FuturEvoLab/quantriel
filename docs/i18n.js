@@ -222,6 +222,8 @@ const ENTRIES = [
   ["美股一个月内明显回落", "米国株は 1 か月で明確に下落", "US stocks fell noticeably over the month"],
   ["美股一个月内明显上涨", "米国株は 1 か月で明確に上昇", "US stocks rose noticeably over the month"],
   ["含修正", "訂正反映", "amended"],
+  ["备注", "メモ", "Note"],
+  ["美股代码", "米国株コード", "US ticker"],
   ["修正未取到", "訂正未取得", "amendment missing"],
   ["这一季度有修正申报暂时取不到，结果只包含其余申报", "この四半期の訂正報告を一時的に取得できず、結果はそれ以外の報告のみです", "An amendment for this quarter could not be fetched right now; results include the other filings only"],
   ["已并入这一季度的修正申报（13F-HR/A）", "この四半期の訂正報告（13F-HR/A）を反映済み", "Includes this quarter's amendment filings (13F-HR/A)"],

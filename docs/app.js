@@ -573,3 +573,21 @@ document.addEventListener("click", (e) => {
 $("#svc-restart").addEventListener("click", () => { if (confirm("重启服务？大约几秒钟，页面会自动刷新。")) restartService(); });
 checkVersion();
 setInterval(checkVersion, 15000);
+
+// 键盘也能用：能点开详情的行情卡片和表格行可以用 Tab 选中，按 Enter / 空格打开（和鼠标点击走同一套处理）
+const KEY_TARGETS = "tr[data-sym], .q-card[data-sym], tr[data-fund]";
+let keyMarkPending = false;
+new MutationObserver(() => {
+  if (keyMarkPending) return;
+  keyMarkPending = true;
+  setTimeout(() => {  // 合并同一批 DOM 变化；不用 requestAnimationFrame，后台标签页里它不会执行
+    keyMarkPending = false;
+    document.querySelectorAll(KEY_TARGETS).forEach((e) => { if (!e.hasAttribute("tabindex")) e.tabIndex = 0; });
+  }, 50);
+}).observe(document.querySelector("main"), { childList: true, subtree: true });
+document.addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches?.(KEY_TARGETS)) {
+    e.preventDefault();
+    e.target.click();
+  }
+});
