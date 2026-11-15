@@ -1,7 +1,7 @@
 name: demo
 
 # 在线演示（https://quantriel.futurevolab.com）定时重新录制数据快照并发布：
-# 工作日每 2 小时一次（覆盖港股和美股交易时段），周末每天一次（新闻、COT）。时间是 UTC。
+# 工作日每 2 小时一次（覆盖港股和美股交易时段），周末每天一次（新闻、COT），界面代码推送到 main 时也会发布。时间是 UTC。
 # 快照不完整（数据源被限流等）时 build_demo.py 会失败退出，不发布，线上继续用上一份。
 # 发布需要仓库 Secrets：CLOUDFLARE_API_TOKEN（只授权部署 Workers）和 CLOUDFLARE_ACCOUNT_ID；
 # 没有设置时只生成快照、作为 artifact 保存 3 天，方便检查。
@@ -9,6 +9,9 @@ on:
   schedule:
     - cron: "23 */2 * * 1-5"
     - cron: "23 3 * * 0,6"
+  push:  # 界面或演示版代码改了：马上重新发布，不用等下一次定时
+    branches: [main]
+    paths: ["static/**", "demo/**", "tools/build_demo.py", "server.py", "wrangler.jsonc"]
   workflow_dispatch:
 
 permissions:
@@ -23,13 +26,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Record the data snapshot
         run: python -W ignore tools/build_demo.py docs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: demo-site
           path: docs

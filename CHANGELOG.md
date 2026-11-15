@@ -2,6 +2,11 @@
 
 版本号显示在「设置 → 服务」里；`/api/version` 也会返回。
 
+## 未发布
+
+- EIA 请求超时（天然气 6 年周数据有时 30 秒以上才响应）时重试一次，超时放宽到 45 秒；限流等 HTTP 错误不重试。
+- GitHub Actions 升级到 checkout / setup-python / upload-artifact v7（Node 24，Node 20 已被 GitHub 弃用）；在线版在界面或演示代码推送到 main 时也会立即重新发布。
+
 ## 1.5.6 — 2026-11-15
 
 代码审查后的修复：

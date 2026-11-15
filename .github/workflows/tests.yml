@@ -19,8 +19,8 @@ jobs:
           - { os: macos-latest, python: "3.12" }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       # 只用标准库，无需安装依赖；测试不联网，数据写在临时目录

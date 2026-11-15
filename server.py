@@ -1941,7 +1941,12 @@ def eia_route(route, series):
         if time.time() < _eia_cooldown.get(route, 0):
             raise ApiError("EIA 暂时不可用（上次请求失败，稍后自动重试）")
         try:
-            d = http_get(url, ttl=EIA_TTL)
+            try:
+                d = http_get(url, ttl=EIA_TTL, timeout=45)
+            except ApiError as e:  # EIA 偶尔 30 秒以上才响应（天然气 6 年周数据）：网络超时重试一次；HTTP 错误（限流等）不重试
+                if not str(e).startswith("网络错误"):
+                    raise
+                d = http_get(url, ttl=EIA_TTL, timeout=45)
         except ApiError as e:
             _eia_cooldown[route] = time.time() + (3600 if "HTTP 429" in str(e) else 600)
             msg = str(e).replace(key, "***")
@@ -2004,7 +2009,7 @@ def eia():
     out, errors, demo = [], {}, False
     for m in EIA_SERIES:
         try:
-            rows, d = jobs[m["route"]].result(timeout=60)
+            rows, d = jobs[m["route"]].result(timeout=120)
             demo = demo or bool(d)
             out.append(eia_stat(m, rows))
         except Exception as e:  # noqa: BLE001

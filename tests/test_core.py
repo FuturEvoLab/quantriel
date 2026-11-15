@@ -570,6 +570,31 @@ class NewsAccuracy(unittest.TestCase):
 
 
 
+class EiaRetry(unittest.TestCase):
+    def test_network_timeout_retried_once_but_http_errors_not(self):
+        import tempfile
+        old = s.DATA, s.CACHE
+        s.DATA = tempfile.mkdtemp()
+        s.CACHE = os.path.join(s.DATA, "cache")
+        try:
+            calls = []
+
+            def flaky(url, **kw):
+                calls.append(kw.get("timeout"))
+                if len(calls) == 1:
+                    raise s.ApiError("网络错误: The read operation timed out")
+                return {"response": {"data": [{"period": "2026-11-06", "value": 1}]}}
+            with mock.patch.object(s, "http_get", flaky):
+                rows, _ = s.eia_route("natural-gas/stor/wkly", ["NW2_EPG0_SWO_R48_BCF"])
+            self.assertEqual((len(calls), len(rows)), (2, 1))
+            with mock.patch.object(s, "http_get", side_effect=s.ApiError("HTTP 429: too many")) as m:
+                with self.assertRaises(s.ApiError):
+                    s.eia_route("petroleum/stoc/wstk", ["WCESTUS1"])
+            self.assertEqual(m.call_count, 1)  # 限流不重试
+        finally:
+            s.DATA, s.CACHE = old
+
+
 class DemoQuality(unittest.TestCase):
     """定时发布在线演示前的检查：核心数据大面积缺失时不发布"""
     def test_quality_gate(self):
